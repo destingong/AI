@@ -1,0 +1,185 @@
+; The code below is the diagnostic decision tree to solve the problem: 
+; "two PCs cannot communicate with each other"
+; -- Name: Chen Gong
+; -- UPI: cgon486
+
+
+; Decision Node: Source PC turned on?
+(defrule srcPcOn
+    =>
+    (printout t "Is the source PC turned on? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (assert (srcTurnedOn))
+        else 
+        (and 
+            (printout t "solution: Source PC is not turned on." crlf)
+            (assert (srcTurnedOff))
+        )
+    )
+)
+
+; Decision Node: Destination PC turned on?
+(defrule destPcOn
+    (srcTurnedOn)
+    =>
+    (printout t "Is the destination PC turned on? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (assert (destTurnedOn))
+        else 
+        (and 
+            (printout t "solution: Destination PC is not turned on." crlf)
+            (assert (destTurnedOff))
+        )
+    )
+)
+
+; Decision Node: Packets pass the router?
+(defrule packetPass
+    (destTurnedOn)
+    =>
+    (printout t "Do the packets pass the router? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (assert (packet-pass-yes))
+        else 
+        (assert (packet-pass-no))
+    )
+)
+
+; Decision Node: Correct PC Gateway?
+(defrule pcGateway
+    (packet-pass-yes)
+    =>
+    (printout t "Is the PC gateway correct? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (assert (gateway-correct))
+        else 
+        (and 
+            (printout t "solution: Incorrect PC Gateway." crlf)
+            (assert(gateway-incorrect))
+        )
+    )
+)
+
+; Decision Node: Correct IP address?
+(defrule ipAddress
+    (gateway-correct)
+    =>
+    (printout t "Is IP address correct? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (and 
+            (printout t "solution: PC hardware problem." crlf)
+            (assert(ip-correct))
+        )
+        else 
+        (and 
+            (printout t "solution: Incorrect IP address." crlf)
+            (assert(ip-incorrect))
+        )
+    )
+)
+
+; Decision Node: Router can communicate with other routers?
+(defrule routerCommunication 
+    (packet-pass-no)
+    =>
+    (printout t "Can current router communicate with other routers? (2-Communicate With All, 1-Communicate With Partial, 0-Communicate With None)" crlf)
+    (bind ?x (read))
+    (if (or (= ?x 2) (= ?x 1))
+        then
+            (if (= ?x 2)
+            then 
+                (assert(communicate-all))
+            else
+                (assert(communicate-partial))
+            )
+        else 
+            (assert(communicate-none))
+    )
+)
+
+; Decision Node: Destination PC receive packets?
+(defrule destReceivePacket
+    (communicate-all)
+    =>
+    (printout t "Can Destination PC recieved the packets? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (and 
+            (printout t "solution: PC hardware problem." crlf)
+            (assert(pc-received))
+        )
+        else 
+        (and
+            (printout t "solution: Incorrect router interface." crlf)
+            (assert(pc-notReceived))
+        )
+    )
+)
+
+; Decision Node: Cable Connected? 
+(defrule cableConnection
+    (communicate-partial)
+    =>
+    (printout t "Is cable connected? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (assert(cable-connect-yes))
+        else 
+        (and
+            (printout t "solution: Cable breaks down." crlf)
+            (assert(cable-connect-no))
+        )
+    )
+)
+
+; Decision Node: Correct IP Protocol?
+(defrule ipProtocol
+    (cable-connect-yes)
+    =>
+    (printout t "Is the IP protocol correct? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (and 
+            (printout t "solution: Destination router problem." crlf)
+            (assert (ip-pro-correct))
+        )
+        else 
+        (and 
+            (printout t "solution: Routing problem." crlf)
+            (assert (ip-pro-incorrect))
+        )
+    )
+)
+
+; Decision Node: Router is offline?
+(defrule routerOffline
+    (communicate-none)
+    =>
+    (printout t "Is the router offline? (1-yes, 0-no)" crlf)
+    (bind ?x (read))
+    (if (= ?x 1)
+        then 
+        (and 
+            (printout t "solution: Router Admin Down." crlf)
+            (assert (router-offline))
+        )
+        else 
+        (and 
+            (printout t "solution: Router hardware problem." crlf)
+            (assert (roiuter-notOffline))
+        )
+    )
+)
